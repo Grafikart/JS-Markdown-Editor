@@ -1,0 +1,113 @@
+$font: "Open Sans";
+$font-size: 16px;
+$font-color: #404852;
+$font-color-light: #9e9e9e;
+
+@import 'components/mixins';
+@import 'components/codemirror';
+@import 'components/icons';
+
+.mdeditor {
+
+  * {
+    box-sizing: border-box;
+  }
+
+  header{
+    padding: 4px 0 24px 0;
+    color: $font-color-light;
+  }
+
+  &_body{
+    @include clearfix;
+    padding: 10px 20px 20px;
+
+    border: 1px solid #EEE;
+  }
+
+  &_markdown {
+    float: left;
+    width: 50%;
+  }
+
+  &_preview {
+    float: right;
+    width: 50%;
+    border-left: none;
+  }
+
+  &_toolbar {
+    height: 34px;
+
+    background: #fff;
+    border: none;
+    box-shadow: 0px 1px 2px rgba(0, 0, 0, 0.2);
+
+    button {
+      cursor: pointer;
+      display: inline-block;
+      width: 34px;
+      height: 34px;
+      text-align: center;
+
+      border: none;
+      background: transparent;
+      transition: background .3s;
+
+      &:hover {
+        background-color: #EEE;
+      }
+    }
+  }
+
+  &_fullscreen {
+    float: right;
+  }
+
+}
+
+/* Fullscreen mode */
+.mdeditor.is-fullscreen{
+  position: fixed;
+  z-index: 9999;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #fff;
+
+  .mdeditor_body{
+    border: none;
+  }
+
+  .mdeditor_markdown, .mdeditor_preview{
+    position: fixed;
+    float: none;
+
+    top: 34px;
+    left: 0;
+    right: auto;
+    bottom: 0;
+
+    height: 100%;
+    width: 50%;
+
+  }
+
+  .mdeditor_preview{
+    right: 0;
+    left: auto;
+  }
+
+  .mdeditor_scroll{
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    padding: 0 20px;
+
+    overflow: scroll;
+  }
+
+}

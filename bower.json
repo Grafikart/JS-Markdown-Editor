@@ -1,0 +1,21 @@
+{
+  "name": "MdEditor",
+  "version": "0.0.0",
+  "authors": [
+    "Grafikart <contact@grafikart.fr>"
+  ],
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "app/scripts/bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "marked": "~0.3.2",
+    "dropzone": "~3.11.1",
+    "underscore": "~1.7.0"
+  }
+}
