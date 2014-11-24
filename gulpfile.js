@@ -25,7 +25,6 @@ var path = require('path');
 var $ = require('gulp-load-plugins')();
 var del = require('del');
 var gutil = require('gutil');
-var runSequence = require('run-sequence');
 var browserSync = require('browser-sync');
 var pagespeed = require('psi');
 var reload = browserSync.reload;
@@ -60,13 +59,8 @@ gulp.task('jshint', function () {
 
 // Copy All Files At The Root Level (app)
 gulp.task('copy', function () {
-  return gulp.src([
-    'app/*',
-    '!app/*.html',
-    'node_modules/apache-server-configs/dist/.htaccess'
-  ], {
-    dot: true
-  }).pipe(gulp.dest('dist'))
+  return gulp.src(['app/styles/fonts/*'])
+    .pipe(gulp.dest('dist/fonts'))
     .pipe($.size({title: 'copy'}));
 });
 
@@ -82,8 +76,7 @@ gulp.task('styles', function () {
   // For best performance, don't add Sass partials to `gulp.src`
   return gulp.src([
       'app/styles/*.scss',
-      'app/styles/**/*.css',
-      'app/styles/components/components.scss'
+      'app/styles/**/*.css'
     ])
     .pipe($.changed('styles', {extension: '.scss'}))
     .pipe($.rubySass({
@@ -93,43 +86,28 @@ gulp.task('styles', function () {
       .on('error', console.error.bind(console))
     )
     .pipe($.autoprefixer(AUTOPREFIXER_BROWSERS))
-    .pipe(gulp.dest('.tmp/styles'))
+    .pipe(gulp.dest('app/styles'))
     // Concatenate And Minify Styles
     .pipe($.if('*.css', $.csso()))
-    .pipe(gulp.dest('dist/styles'))
+    .pipe(gulp.dest('dist'))
     .pipe($.size({title: 'styles'}));
 });
 
 // Scan Your HTML For Assets & Optimize Them
 gulp.task('html', function () {
-  var assets = $.useref.assets({searchPath: '{.tmp,app}'});
-
-  return gulp.src('app/**/*.html')
+  var assets = $.useref.assets({searchPath: 'app'});
+  gulp.src('app/demo.html')
     .pipe(assets)
-    // Concatenate And Minify JavaScript
-    .pipe($.if('*.js', $.uglify({preserveComments: 'some'})))
-    // Remove Any Unused CSS
-    // Note: If not using the Style Guide, you can delete it from
-    // the next line to only include styles your project uses.
-    .pipe($.if('*.css', $.uncss({
-      html: [
-        'app/index.html',
-      ]
-    })))
-    // Concatenate And Minify Styles
-    // In case you are still using useref build blocks
+    .pipe($.if('*.js', $.uglify()))
     .pipe($.if('*.css', $.csso()))
     .pipe(assets.restore())
     .pipe($.useref())
-    // Minify Any HTML
-    .pipe($.if('*.html', $.minifyHtml()))
-    // Output Files
     .pipe(gulp.dest('dist'))
     .pipe($.size({title: 'html'}));
 });
 
 // Clean Output Directory
-gulp.task('clean', del.bind(null, ['.tmp', 'dist']));
+gulp.task('clean', del.bind(null, ['dist']));
 
 // Watch Files For Changes & Reload
 gulp.task('serve', ['styles'], function () {
@@ -146,21 +124,8 @@ gulp.task('serve', ['styles'], function () {
   gulp.watch(['app/scripts/**/*.coffee'], ['jshint']);
 });
 
-// Build and serve the output from the dist build
-gulp.task('serve:dist', ['default'], function () {
-  browserSync({
-    notify: false,
-    // Run as an https by uncommenting 'https: true'
-    // Note: this uses an unsigned certificate which on first access
-    //       will present a certificate warning in the browser.
-    // https: true,
-    server: 'dist'
-  });
-});
-
 // Build Production Files, the Default Task
-gulp.task('default', ['clean'], function (cb) {
-  runSequence('styles', ['jshint', 'html', 'fonts', 'copy'], cb);
+gulp.task('default', ['html', 'copy'], function (cb) {
 });
 
 // Run PageSpeed Insights

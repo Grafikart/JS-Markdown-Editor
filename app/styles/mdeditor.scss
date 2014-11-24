@@ -3,24 +3,28 @@ $font-size: 16px;
 $font-color: #404852;
 $font-color-light: #9e9e9e;
 
+$color: #78AB4E;
+$color-alert: #c0392b;
+
 @import 'components/mixins';
 @import 'components/codemirror';
 @import 'components/icons';
 
 .mdeditor {
 
+  position: relative;
+
   * {
     box-sizing: border-box;
   }
 
   header{
-    padding: 4px 0 24px 0;
+    padding: 4px 0 4px 0;
     color: $font-color-light;
   }
 
   &_body{
     @include clearfix;
-    padding: 10px 20px 20px;
 
     border: 1px solid #EEE;
   }
@@ -37,7 +41,9 @@ $font-color-light: #9e9e9e;
   }
 
   &_toolbar {
+    position: relative;
     height: 34px;
+    z-index: 500;
 
     background: #fff;
     border: none;
@@ -62,6 +68,146 @@ $font-color-light: #9e9e9e;
 
   &_fullscreen {
     float: right;
+  }
+
+  &_scroll{
+    padding: 10px 20px;
+  }
+
+}
+
+/* Dropzone / Drop File */
+.mdeditor_modal {
+  position: absolute;
+  display: none;
+  z-index: 20;
+  top: 32px;
+  left: 50%;
+  right: 0;
+  bottom: 0;
+  background: rgba(#eeeeee, 0.95);
+  z-index: 5600;
+}
+
+.mdeditor_drop {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  bottom: 20px;
+  left: 20px;
+  border: 4px dashed #b3afb1;
+  padding: 10px;
+  text-align: center;
+
+  transition: all .3s ease-in-out;
+  transition-property:color opacity border-width;
+  @include clearfix;
+
+  &.dz-drag-hover {
+    border-color: $color;
+  }
+  .dz-preview {
+    text-align: center;
+    display: inline-block;
+    position: relative;
+    overflow: hidden;
+    width: 150px;
+    height: 150px;
+    margin: 10px;
+    border-radius: 3px;
+
+    img {
+      position: absolute;
+      left: 50%;
+      height: 100%;
+      border-radius: 3px;
+      transition: opacity .3s ease-in-out;
+      transform: translateX(-50%);
+    }
+  }
+  .dz-size,
+  .dz-filename,
+  .dz-error-mark,
+  .dz-success-mark {
+    display: none;
+  }
+  .dz-upload {
+    transition: width 0.3s ease-in-out;
+  }
+  .dz-progress {
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    margin: -7px auto 0 auto;
+    height: 15px;
+    width: 115px;
+
+    border: 2px solid $color;
+    border-radius:20px;
+    opacity: 0;
+    transition-duration: .5s;
+    transform: translateY(20px);
+  }
+  .dz-upload {
+    display: block;
+    margin: 2px;
+    height: 7px;
+    width: 0%;
+
+    border-radius:20px;
+    background-color: $color;
+  }
+  .dz-processing {
+    border: 2px dashed $color;
+
+    .dz-progress {
+      opacity: 1;
+      transform: translateY(0px);
+    }
+    img {
+      opacity:0;
+    }
+  }
+  .dz-error{
+    color: $color-alert;
+    &,
+    .dz-progress {
+      border-color: $color-alert;
+    }
+    .dz-upload {
+      background-color: $color-alert;
+    }
+  }
+  .dz-remove,
+  .dz-insert {
+    position: absolute;
+    display: block;
+    top: 76px;
+    right: 10px;
+    left: 10px;
+    background-color: $color-alert;
+    padding: 3px 0;
+
+    color: #FFF;
+    opacity: 0;
+    transition: all .3s ease-in-out;
+    transition-property:transform opacity;
+    transform: translateY(5px);
+  }
+  .dz-insert {
+    top: 36px;
+    background: $color;
+  }
+  .dz-preview:hover {
+    img{
+      opacity: .3;
+    }
+    .dz-remove,
+    .dz-insert {
+      opacity: 1;
+      transform: translateY(0px);
+    }
   }
 
 }
@@ -91,7 +237,6 @@ $font-color-light: #9e9e9e;
 
     height: 100%;
     width: 50%;
-
   }
 
   .mdeditor_preview{
@@ -110,4 +255,17 @@ $font-color-light: #9e9e9e;
     overflow: scroll;
   }
 
+}
+
+/* No preview */
+.mdeditor.has-no-preview{
+  .mdeditor_markdown{
+    width: 100%;
+  }
+  .mdeditor_preview{
+    display: none;
+  }
+  .mdeditor_modal{
+    left: 0;
+  }
 }

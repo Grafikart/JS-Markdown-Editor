@@ -13,6 +13,10 @@ global CodeMirror: false
  */
 
 /*
+global Dropzone: false
+ */
+
+/*
 global marked: false
  */
 var MdEditor,
@@ -20,19 +24,26 @@ var MdEditor,
 
 MdEditor = (function() {
   function MdEditor(selector, options) {
+    this.save = __bind(this.save, this);
     this.fullscreen = __bind(this.fullscreen, this);
     this.image = __bind(this.image, this);
     this.link = __bind(this.link, this);
     this.code = __bind(this.code, this);
     this.italic = __bind(this.italic, this);
     this.bold = __bind(this.bold, this);
-    var default_options;
     this.textarea = $(selector);
     if (this.textarea.length === 0) {
       return console.log('Aucun élément ne correspond à ce selecteuir');
     }
-    default_options = {
-      labelClose: 'Do you really want to close this window ? Every edit you did could be lost'
+    this.options = {
+      labelClose: 'Do you really want to close this window ? Every edit you did could be lost',
+      labelInsert: 'Insert',
+      labelDelete: 'Delete',
+      labelSuccess: 'Content save with success',
+      labelImage: 'Insert your image url',
+      preview: true,
+      uploader: false,
+      uploaderData: {}
     };
     this.markdownSections = [];
     this.previewSections = [];
@@ -42,16 +53,19 @@ MdEditor = (function() {
     this.isMarkdownMoving = false;
     this.isPreviewMoving = false;
     if (options !== void 0) {
-      $.merge(this.options, options);
+      $.extend(this.options, options);
     }
     this.canExit = true;
-    this.element = $("<div class=\"mdeditor\">\n  <div class=\"mdeditor_toolbar\"></div>\n  <div class=\"mdeditor_body\">\n    <section class=\"mdeditor_markdown\"><div class=\"mdeditor_scroll mdeditor_markdown_scroll\"><header>Markdown</header></div></section>\n    <section class=\"mdeditor_preview\"><div class=\"mdeditor_scroll mdeditor_preview_scroll\"><header>Aperçu</header><div class=\"mdeditor_render\"></div></div></section>\n  </div>\n</div>");
+    this.element = $("<div class=\"mdeditor\">\n  <div class=\"mdeditor_toolbar\"></div>\n  <div class=\"mdeditor_body\">\n    <section class=\"mdeditor_markdown\"><div class=\"mdeditor_scroll mdeditor_markdown_scroll\"><header>Markdown</header></div></section>\n    <section class=\"mdeditor_preview\"><div class=\"mdeditor_scroll mdeditor_preview_scroll\"><header>Aperçu</header><div class=\"mdeditor_render\"></div></div></section>\n  </div>\n  <div class=\"mdeditor_modal\"><div class=\"mdeditor_drop\"></div></div>\n</div>");
     this.markdownScroll = $('.mdeditor_markdown_scroll', this.element);
     this.previewScroll = $('.mdeditor_preview_scroll', this.element);
     this.preview = $('.mdeditor_render', this.element);
     this.toolbar = $('.mdeditor_toolbar', this.element);
     this.form = this.textarea.parents('form');
     this.textarea.after(this.element);
+    if (!this.options.preview) {
+      this.element.addClass('has-no-preview');
+    }
     $('.mdeditor_markdown .mdeditor_scroll', this.element).append(this.textarea);
     this.editor = CodeMirror.fromTextArea(this.textarea[0], {
       mode: 'markdown',
@@ -62,8 +76,8 @@ MdEditor = (function() {
     });
     this.updatePreview();
     this._buildToolbar();
+    this._buildDropzone();
     this._bindEvents();
-    this.fullscreen();
   }
 
   MdEditor.prototype.updatePreview = function() {
@@ -76,6 +90,10 @@ MdEditor = (function() {
       });
       return this._setSections();
     }
+  };
+
+  MdEditor.prototype.flash = function(message) {
+    return alert(message);
   };
 
   MdEditor.prototype.bold = function(e) {
@@ -117,10 +135,22 @@ MdEditor = (function() {
   };
 
   MdEditor.prototype.image = function(e) {
+    var cursor, url;
     if (e !== void 0) {
       e.preventDefault();
     }
-    return $('.mdeditor_modal', this.element).toggle();
+    if (this.options.uploader === false) {
+      url = window.prompt(this.options.labelImage);
+      this.editor.doc.replaceSelection("![](" + url + ")");
+      cursor = this.editor.doc.getCursor();
+      this.editor.doc.setCursor({
+        line: cursor.line,
+        ch: 2
+      });
+      return this.editor.focus();
+    } else {
+      return $('.mdeditor_modal', this.element).toggle();
+    }
   };
 
   MdEditor.prototype.fullscreen = function(e) {
@@ -129,6 +159,30 @@ MdEditor = (function() {
     }
     this.element.toggleClass('is-fullscreen');
     return this.editor.refresh();
+  };
+
+  MdEditor.prototype.save = function(e) {
+    if (e !== void 0) {
+      e.preventDefault;
+    }
+    if (canExit) {
+      return true;
+    }
+    return $.ajax({
+      dataType: 'json',
+      url: this.form.attr('action'),
+      data: this.form.serialize(),
+      type: this.form.attr('method')
+    }).done((function(_this) {
+      return function(data) {
+        _this.canExit = true;
+        return _this.flash(_this.options.labelSuccess);
+      };
+    })(this)).fail((function(_this) {
+      return function(jqXHR) {
+        return _this.flash(jqXHR.responseText);
+      };
+    })(this));
   };
 
   MdEditor.prototype._bindEvents = function() {
@@ -140,8 +194,27 @@ MdEditor = (function() {
     })(this));
     this.form.submit(function() {
       var canExit;
-      return canExit = true;
+      canExit = true;
+      return true;
     });
+    $(document).keydown((function(_this) {
+      return function() {
+        if (e.ctrlKey || e.metaKey) {
+          if (e.which === 83) {
+            _this.save(e);
+          } else if (e.which === 66) {
+            _this.bold(e);
+          } else if (e.which === 73) {
+            _this.italic(e);
+          } else if (e.which === 76) {
+            _this.link(e);
+          }
+        }
+        if (e.which === 27 && _this.element.hasClass('is-fullscreen')) {
+          return fullscreen(e);
+        }
+      };
+    })(this));
     $(window).bind('beforeunload', (function(_this) {
       return function() {
         if (!_this.canExit) {
@@ -193,11 +266,12 @@ MdEditor = (function() {
         scrollTop: destScrollTop
       }, 100, (function(_this) {
         return function() {
-          return _this.isPreviewMoving = false;
+          _this.isPreviewMoving = false;
+          return true;
         };
       })(this));
     }
-  });
+  }, 100);
 
   MdEditor.prototype._scrollTop = function(srcScrollTop, srcList, destList) {
     var destSection, posInSection, section, sectionIndex;
@@ -223,6 +297,75 @@ MdEditor = (function() {
     return $('<button class="mdeditor_fullscreen">f</button>').appendTo(this.toolbar).click(this.fullscreen);
   };
 
+  MdEditor.prototype._buildDropzone = function() {
+    var editor, flash, options;
+    if (this.options.uploader === false) {
+      return false;
+    }
+    options = this.options;
+    flash = this.flash;
+    editor = this.editor;
+    this.dropzone = new Dropzone($('.mdeditor_drop').get(0), {
+      maxFiles: 10,
+      paramName: 'image',
+      url: options.uploader,
+      addRemoveLinks: true,
+      thumbnailWidth: 150,
+      thumbnailHeight: 150,
+      dictRemoveFile: options.labelDelete,
+      init: function() {
+        var addButton, drop;
+        drop = this;
+        addButton = function(file) {
+          var $previewElement;
+          $previewElement = $(file.previewElement);
+          $previewElement.append('<a class="dz-insert" href="#">' + options.labelInsert + '</a>');
+          return $('.dz-insert', $previewElement).click(function(e) {
+            var cursor;
+            e.preventDefault();
+            e.stopPropagation();
+            editor.doc.replaceSelection("![](" + file.url + ")");
+            cursor = editor.doc.getCursor();
+            editor.doc.setCursor({
+              line: cursor.line,
+              ch: 2
+            });
+            editor.focus();
+            return $('.mdeditor_modal').hide();
+          });
+        };
+        this.on('addedfile', function(file) {
+          return addButton(file);
+        });
+        this.on('sending', function(file, jqXHR, formData) {
+          return $.extend(formData, options.uploaderData);
+        });
+        this.on('success', function(file, response) {
+          $.extend(file, response);
+          return $(file.previewElement).removeClass('dz-processing');
+        });
+        this.on('error', function(file, errorMessage, xhr) {
+          flash(errorMessage);
+          return $(file.previewElement).fadeOut();
+        });
+        this.on('removedfile', function(file) {
+          return $.ajax({
+            url: options.uploader + '/' + file.id,
+            method: 'DELETE'
+          }).done(function(data) {}).fail(function(jqXHR) {
+            return flash(jqXHR.responseText);
+          });
+        });
+        return $.each(options.images, function(k, image) {
+          drop.options.addedfile.call(drop, image);
+          drop.options.thumbnail.call(drop, image, image.url);
+          drop.files.push(image);
+          return addButton(image);
+        });
+      }
+    });
+  };
+
   MdEditor.prototype._setSections = _.debounce(function() {
     var mdSectionOffset, previewSectionOffset;
     this.markdownSections = [];
@@ -242,7 +385,7 @@ MdEditor = (function() {
           endOffset: newSectionOffset,
           height: newSectionOffset - mdSectionOffset
         });
-        return mdSectionOffset = newSectionOffset;
+        mdSectionOffset = newSectionOffset;
       };
     })(this));
     this.markdownSections.push({
@@ -263,7 +406,7 @@ MdEditor = (function() {
           endOffset: newSectionOffset,
           height: newSectionOffset - previewSectionOffset
         });
-        return previewSectionOffset = newSectionOffset;
+        previewSectionOffset = newSectionOffset;
       };
     })(this));
     this.previewSections.push({
@@ -272,7 +415,7 @@ MdEditor = (function() {
       height: this.previewScroll[0].scrollHeight - previewSectionOffset
     });
     this.lastMardownScrollTop = -10;
-    return this.lastPreviewScrollTop = -10;
+    this.lastPreviewScrollTop = -10;
   }, 500);
 
   return MdEditor;

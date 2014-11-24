@@ -10,7 +10,6 @@
   "indent": 2,
   "newcap": true,
   "noarg": true,
-  "quotmark": "single",
   "undef": true,
   "unused": "vars",
   "strict": true
