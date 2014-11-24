@@ -1,0 +1,114 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <title>Markdown Editor</title>
+
+  <!-- Bootstrap core CSS -->
+  <link href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.1/css/bootstrap.min.css" rel="stylesheet">
+  <link href='http://fonts.googleapis.com/css?family=Open+Sans:400,600,700,800' rel='stylesheet' type='text/css'>
+  <link rel="stylesheet" href="mdeditor.css">
+  <!-- Custom styles for this template -->
+  <style>
+    .starter-template{
+      margin-top: 100px;
+    }
+  </style>
+</head>
+
+<body>
+
+<nav class="navbar navbar-inverse navbar-fixed-top" role="navigation">
+  <div class="container">
+    <div class="navbar-header">
+      <a class="navbar-brand" href="#">Markdown Editor</a>
+    </div>
+  </div>
+</nav>
+
+<div class="container">
+
+  <div class="starter-template">
+    <form action="/url/whatever">
+      <div class="form-group">
+        <label>Mon contenu</label>
+        <textarea name="content" id="mdeditor" cols="30" rows="10" class="form-control">
+## An h2 header
+
+Paragraphs are separated by a blank line.
+
+2nd paragraph. *Italic*, **bold**, and `monospace`. Itemized lists
+look like:
+
+* this one
+* that one
+* the other one
+
+> Block quotes are
+> written like so.
+>
+> They can span multiple paragraphs,
+> if you like.
+
+Use 3 dashes for an em-dash. Use 2 dashes for ranges (ex., "it's all
+in chapters 12--14"). Three dots ... will be converted to an ellipsis.
+Unicode is supported. ☺
+
+And here is a bit of code
+
+```php
+<?php
+$myvar = 'Here is my code';
+echo $myvar;
+?>
+```
+
+### An h3 header
+
+Paragraphs are separated by a blank line.
+
+2nd paragraph. *Italic*, **bold**, and `monospace`. Itemized lists
+look like:
+
+* this one
+* that one
+* the other one
+
+> Block quotes are
+> written like so.
+>
+> They can span multiple paragraphs,
+> if you like.
+
+Use 3 dashes for an em-dash. Use 2 dashes for ranges (ex., "it's all
+in chapters 12--14"). Three dots ... will be converted to an ellipsis.
+Unicode is supported. ☺
+        </textarea>
+      </div>
+    </form>
+  </div>
+
+</div><!-- /.container -->
+<script src="//ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+<script src="mdeditor.min.js"></script>
+
+<script>
+  var md = new MdEditor('#mdeditor', {
+    uploader: 'http://local.dev/Lab/MdEditor/app/upload.php',
+    preview: true,
+    images: [
+      {id: '1.jpg', url: 'http://lorempicsum.com/futurama/200/200/1'},
+      {id: '1.jpg', url: 'http://lorempicsum.com/futurama/200/200/2'},
+      {id: '1.jpg', url: 'http://lorempicsum.com/futurama/200/200/3'},
+      {id: '1.jpg', url: 'http://lorempicsum.com/futurama/200/200/4'}
+    ]
+  });
+</script>
+</body>
+</html>

@@ -3,5 +3,4 @@ node_modules
 app/images
 .sass-cache
 app/scripts/bower_components
-dist
 .tmp
