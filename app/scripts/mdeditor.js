@@ -39,11 +39,19 @@ MdEditor = (function() {
       labelClose: 'Do you really want to close this window ? Every edit you did could be lost',
       labelInsert: 'Insert',
       labelDelete: 'Delete',
-      labelSuccess: 'Content save with success',
+      labelSuccess: 'Content saved with success',
       labelImage: 'Insert your image url',
+      labelConfirm: 'Do you really want to delete this picture ?',
       preview: true,
       uploader: false,
-      uploaderData: {}
+      uploaderData: {},
+      ctrls: true,
+      imageURL: function(el) {
+        return el.url;
+      },
+      flash: function(message, type) {
+        return window.alert(message);
+      }
     };
     this.markdownSections = [];
     this.previewSections = [];
@@ -56,7 +64,7 @@ MdEditor = (function() {
       $.extend(this.options, options);
     }
     this.canExit = true;
-    this.element = $("<div class=\"mdeditor\">\n  <div class=\"mdeditor_toolbar\"></div>\n  <div class=\"mdeditor_body\">\n    <section class=\"mdeditor_markdown\"><div class=\"mdeditor_scroll mdeditor_markdown_scroll\"><header>Markdown</header></div></section>\n    <section class=\"mdeditor_preview\"><div class=\"mdeditor_scroll mdeditor_preview_scroll\"><header>Aperçu</header><div class=\"mdeditor_render\"></div></div></section>\n  </div>\n  <div class=\"mdeditor_modal\"><div class=\"mdeditor_drop\"></div></div>\n</div>");
+    this.element = $("<div class=\"mdeditor\">\n  <div class=\"mdeditor_toolbar\"></div>\n  <div class=\"mdeditor_body\">\n    <section class=\"mdeditor_markdown\"><div class=\"mdeditor_scroll mdeditor_markdown_scroll\"><header>Markdown</header></div></section>\n    <section class=\"mdeditor_preview\"><div class=\"mdeditor_scroll mdeditor_preview_scroll\"><header>Aperçu</header><div class=\"mdeditor_render formatted\"></div></div></section>\n  </div>\n  <div class=\"mdeditor_modal\"><div class=\"mdeditor_drop\"></div></div>\n</div>");
     this.markdownScroll = $('.mdeditor_markdown_scroll', this.element);
     this.previewScroll = $('.mdeditor_preview_scroll', this.element);
     this.preview = $('.mdeditor_render', this.element);
@@ -92,8 +100,11 @@ MdEditor = (function() {
     }
   };
 
-  MdEditor.prototype.flash = function(message) {
-    return alert(message);
+  MdEditor.prototype.flash = function(message, type) {
+    if (type === void 0) {
+      type = 'error';
+    }
+    return this.options.flash(message, type);
   };
 
   MdEditor.prototype.bold = function(e) {
@@ -158,17 +169,18 @@ MdEditor = (function() {
       e.preventDefault();
     }
     this.element.toggleClass('is-fullscreen');
-    return this.editor.refresh();
+    this.editor.refresh();
+    return this.updatePreview();
   };
 
   MdEditor.prototype.save = function(e) {
     if (e !== void 0) {
-      e.preventDefault;
+      e.preventDefault();
     }
-    if (canExit) {
+    if (this.canExit) {
       return true;
     }
-    return $.ajax({
+    $.ajax({
       dataType: 'json',
       url: this.form.attr('action'),
       data: this.form.serialize(),
@@ -176,42 +188,49 @@ MdEditor = (function() {
     }).done((function(_this) {
       return function(data) {
         _this.canExit = true;
-        return _this.flash(_this.options.labelSuccess);
+        return _this.flash(_this.options.labelSuccess, 'success');
       };
     })(this)).fail((function(_this) {
       return function(jqXHR) {
         return _this.flash(jqXHR.responseText);
       };
     })(this));
+    return false;
   };
 
   MdEditor.prototype._bindEvents = function() {
+    this.markdownScroll.click((function(_this) {
+      return function() {
+        return _this.editor.focus();
+      };
+    })(this));
     this.editor.on('change', (function(_this) {
       return function() {
-        _this.cenExit = false;
+        _this.canExit = false;
         return _this.updatePreview();
       };
     })(this));
-    this.form.submit(function() {
-      var canExit;
-      canExit = true;
-      return true;
-    });
-    $(document).keydown((function(_this) {
+    this.form.submit((function(_this) {
       return function() {
-        if (e.ctrlKey || e.metaKey) {
-          if (e.which === 83) {
-            _this.save(e);
+        _this.canExit = true;
+        return true;
+      };
+    })(this));
+    $(document).keydown((function(_this) {
+      return function(e) {
+        if (e.ctrlKey || e.metaKey || e.altKey) {
+          if (e.which === 83 && _this.options.ctrls) {
+            return _this.save(e);
           } else if (e.which === 66) {
-            _this.bold(e);
+            return _this.bold(e);
           } else if (e.which === 73) {
-            _this.italic(e);
+            return _this.italic(e);
           } else if (e.which === 76) {
-            _this.link(e);
+            return _this.link(e);
           }
         }
         if (e.which === 27 && _this.element.hasClass('is-fullscreen')) {
-          return fullscreen(e);
+          return _this.fullscreen(e);
         }
       };
     })(this));
@@ -298,33 +317,50 @@ MdEditor = (function() {
   };
 
   MdEditor.prototype._buildDropzone = function() {
-    var editor, flash, options;
+    var editor, options, that;
     if (this.options.uploader === false) {
       return false;
     }
     options = this.options;
-    flash = this.flash;
     editor = this.editor;
+    that = this;
     this.dropzone = new Dropzone($('.mdeditor_drop').get(0), {
       maxFiles: 10,
       paramName: 'image',
       url: options.uploader,
-      addRemoveLinks: true,
+      addRemoveLinks: false,
       thumbnailWidth: 150,
       thumbnailHeight: 150,
-      dictRemoveFile: options.labelDelete,
       init: function() {
         var addButton, drop;
         drop = this;
         addButton = function(file) {
           var $previewElement;
           $previewElement = $(file.previewElement);
-          $previewElement.append('<a class="dz-insert" href="#">' + options.labelInsert + '</a>');
+          $previewElement.append('<a class="dz-insert">' + options.labelInsert + '</a>');
+          $previewElement.append('<a class="dz-remove">' + options.labelDelete + '</a>');
+          $('.dz-remove', $previewElement).click(function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            if (window.confirm(options.labelConfirm)) {
+              return $.ajax({
+                url: options.uploader + '/' + file.id,
+                method: 'DELETE'
+              }).done(function(data) {
+                console.log(file);
+                return $(file.previewElement).fadeOut(500, function() {
+                  return drop.removeFile(file);
+                });
+              }).fail(function(jqXHR) {
+                return that.flash(jqXHR.responseText);
+              });
+            }
+          });
           return $('.dz-insert', $previewElement).click(function(e) {
             var cursor;
             e.preventDefault();
             e.stopPropagation();
-            editor.doc.replaceSelection("![](" + file.url + ")");
+            editor.doc.replaceSelection("![](" + (options.imageURL(file)) + ")");
             cursor = editor.doc.getCursor();
             editor.doc.setCursor({
               line: cursor.line,
@@ -338,30 +374,26 @@ MdEditor = (function() {
           return addButton(file);
         });
         this.on('sending', function(file, jqXHR, formData) {
-          return $.extend(formData, options.uploaderData);
+          return $.each(options.uploaderData, function(k, v) {
+            return formData.append(k, v);
+          });
         });
         this.on('success', function(file, response) {
           $.extend(file, response);
           return $(file.previewElement).removeClass('dz-processing');
         });
         this.on('error', function(file, errorMessage, xhr) {
-          flash(errorMessage);
+          that.flash(errorMessage);
           return $(file.previewElement).fadeOut();
         });
-        this.on('removedfile', function(file) {
-          return $.ajax({
-            url: options.uploader + '/' + file.id,
-            method: 'DELETE'
-          }).done(function(data) {}).fail(function(jqXHR) {
-            return flash(jqXHR.responseText);
+        if (options.images) {
+          return $.each(options.images, function(k, image) {
+            drop.options.addedfile.call(drop, image);
+            drop.options.thumbnail.call(drop, image, options.imageURL(image));
+            drop.files.push(image);
+            return addButton(image);
           });
-        });
-        return $.each(options.images, function(k, image) {
-          drop.options.addedfile.call(drop, image);
-          drop.options.thumbnail.call(drop, image, image.url);
-          drop.files.push(image);
-          return addButton(image);
-        });
+        }
       }
     });
   };

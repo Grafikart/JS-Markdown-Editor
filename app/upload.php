@@ -1,9 +1,10 @@
 <?php
 /**
  * This is for demo purpose, copy this code on your website will make it explode !
- */
+**/s
+
 header('Content-Type: application/json');
-$file = 'images/1.jpg';
+$file = '1.jpg';
 move_uploaded_file($_FILES['image']['tmp_name'], $file);
 $results = array(
   'id' => basename($file),

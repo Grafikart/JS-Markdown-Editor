@@ -26,11 +26,15 @@ class MdEditor
       labelClose: 'Do you really want to close this window ? Every edit you did could be lost',
       labelInsert: 'Insert',
       labelDelete: 'Delete',
-      labelSuccess: 'Content save with success',
+      labelSuccess: 'Content saved with success',
       labelImage: 'Insert your image url',
+      labelConfirm: 'Do you really want to delete this picture ?'
       preview: true,
       uploader: false,
-      uploaderData: {}
+      uploaderData: {},
+      ctrls: true,
+      imageURL: (el) -> return el.url
+      flash: (message, type) -> return window.alert(message)
     }
 
     # Variables
@@ -50,7 +54,7 @@ class MdEditor
       <div class="mdeditor_toolbar"></div>
       <div class="mdeditor_body">
         <section class="mdeditor_markdown"><div class="mdeditor_scroll mdeditor_markdown_scroll"><header>Markdown</header></div></section>
-        <section class="mdeditor_preview"><div class="mdeditor_scroll mdeditor_preview_scroll"><header>Aperçu</header><div class="mdeditor_render"></div></div></section>
+        <section class="mdeditor_preview"><div class="mdeditor_scroll mdeditor_preview_scroll"><header>Aperçu</header><div class="mdeditor_render formatted"></div></div></section>
       </div>
       <div class="mdeditor_modal"><div class="mdeditor_drop"></div></div>
     </div>
@@ -87,8 +91,9 @@ class MdEditor
       @preview.html marked(text), breaks: true
       @_setSections()
 
-  flash: (message) ->
-    alert(message)
+  flash: (message, type) ->
+    type = 'error' if type is undefined
+    @options.flash(message, type)
 
   # Transform selection with bold **
   bold: (e) =>
@@ -132,11 +137,13 @@ class MdEditor
     e.preventDefault() if e isnt undefined
     @element.toggleClass('is-fullscreen')
     @editor.refresh()
+    @updatePreview()
 
 
   save: (e) =>
-    e.preventDefault if e isnt undefined
-    return true if canExit
+    e.preventDefault() if e isnt undefined
+    return true if @canExit
+
     $.ajax(
       dataType: 'json',
       url: @form.attr('action'),
@@ -144,35 +151,41 @@ class MdEditor
       type: @form.attr('method')
     ).done( (data) =>
       @canExit = true;
-      @flash(@options.labelSuccess)
+      @flash(@options.labelSuccess, 'success')
     ).fail( (jqXHR) =>
       @flash(jqXHR.responseText)
     )
+    return false
 
   # Bind various events
   _bindEvents: ->
+
+    # FOOOCUS
+    @markdownScroll.click =>
+      @editor.focus()
+
     # When changing markdown content
     @editor.on 'change', =>
-      @cenExit = false
+      @canExit = false
       @updatePreview()
 
     # Submiting cut the beforeunload
-    @form.submit ->
-      canExit = true
+    @form.submit =>
+      @canExit = true
       return true
 
     # Keyboard shortcuts
-    $(document).keydown =>
-      if e.ctrlKey or e.metaKey
-        if e.which is 83
-          @save(e)
+    $(document).keydown (e) =>
+      if e.ctrlKey or e.metaKey or e.altKey
+        if e.which is 83 and @options.ctrls
+          return @save(e)
         else if e.which is 66
-          @bold(e)
+          return @bold(e)
         else if e.which is 73
-          @italic(e)
+          return @italic(e)
         else if e.which is 76
-          @link(e)
-      fullscreen(e) if e.which is 27 and @element.hasClass('is-fullscreen')
+          return @link(e)
+      return @fullscreen(e) if e.which is 27 and @element.hasClass('is-fullscreen')
 
     # Prevent user from leaving by mistake
     $(window).bind 'beforeunload', => return @options.labelClose if !@canExit
@@ -236,50 +249,60 @@ class MdEditor
   _buildDropzone: ->
     return false if @options.uploader is false
     options = @options
-    flash = @flash
     editor = @editor
+    that = @
     @dropzone = new Dropzone $('.mdeditor_drop').get(0),
       maxFiles: 10,
       paramName: 'image',
       url: options.uploader,
-      addRemoveLinks: true,
+      addRemoveLinks: false,
       thumbnailWidth: 150,
       thumbnailHeight:150,
-      dictRemoveFile: options.labelDelete,
       init: ->
         drop = this
         addButton = (file) ->
           $previewElement = $(file.previewElement)
-          $previewElement.append('<a class="dz-insert" href="#">' + options.labelInsert + '</a>')
+          $previewElement.append('<a class="dz-insert">' + options.labelInsert + '</a>')
+          $previewElement.append('<a class="dz-remove">' + options.labelDelete + '</a>')
+          $('.dz-remove', $previewElement).click (e) ->
+            e.preventDefault()
+            e.stopPropagation()
+            if window.confirm options.labelConfirm
+              $.ajax(
+                url: options.uploader + '/' + file.id,
+                method: 'DELETE'
+              ).done((data) ->
+                console.log(file)
+                $(file.previewElement).fadeOut 500, -> drop.removeFile(file)
+              ).fail((jqXHR) ->
+                that.flash(jqXHR.responseText)
+              )
+
           $('.dz-insert', $previewElement).click (e) ->
             e.preventDefault()
             e.stopPropagation()
-            editor.doc.replaceSelection("![](#{file.url})")
+            editor.doc.replaceSelection("![](#{options.imageURL(file)})")
             cursor = editor.doc.getCursor()
             editor.doc.setCursor({line: cursor.line, ch: 2})
             editor.focus()
             $('.mdeditor_modal').hide()
         this.on 'addedfile', (file) -> addButton(file)
-        this.on 'sending', (file, jqXHR, formData) -> $.extend(formData, options.uploaderData)
+        this.on 'sending', (file, jqXHR, formData) ->
+          $.each(options.uploaderData, (k, v) ->
+            formData.append(k, v)
+          )
         this.on 'success', (file, response) ->
           $.extend(file, response)
           $(file.previewElement).removeClass('dz-processing')
         this.on 'error', (file, errorMessage, xhr) ->
-          flash(errorMessage)
+          that.flash(errorMessage)
           $(file.previewElement).fadeOut()
-        this.on 'removedfile', (file) ->
-          $.ajax(
-            url: options.uploader + '/' + file.id,
-            method: 'DELETE'
-          ).done((data) ->
-          ).fail((jqXHR) ->
-            flash(jqXHR.responseText)
-          )
-        $.each options.images, (k, image) ->
-          drop.options.addedfile.call(drop, image)
-          drop.options.thumbnail.call(drop, image, image.url)
-          drop.files.push(image)
-          addButton(image)
+        if options.images
+          $.each options.images, (k, image) ->
+            drop.options.addedfile.call(drop, image)
+            drop.options.thumbnail.call(drop, image, options.imageURL(image))
+            drop.files.push(image)
+            addButton(image)
     return
 
   # To sync the scroll we need to build an array of every section (a shit load of code inside)
@@ -334,5 +357,3 @@ class MdEditor
     @lastPreviewScrollTop = -10
     return
   , 500)
-
-#

@@ -574,6 +574,10 @@ span.CodeMirror-selectedtext {
   width: 50%;
   border-left: none;
 }
+.mdeditor_preview img {
+  max-width: 100%;
+  height: auto;
+}
 .mdeditor_toolbar {
   position: relative;
   height: 34px;
@@ -765,7 +769,6 @@ span.CodeMirror-selectedtext {
   left: 0;
   right: auto;
   bottom: 0;
-  height: 100%;
   width: 50%;
 }
 .mdeditor.is-fullscreen .mdeditor_preview {

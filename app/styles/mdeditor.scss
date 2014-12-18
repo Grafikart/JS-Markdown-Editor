@@ -38,6 +38,10 @@ $color-alert: #c0392b;
     float: right;
     width: 50%;
     border-left: none;
+    img{
+      max-width: 100%;
+      height:auto;
+    }
   }
 
   &_toolbar {
@@ -235,7 +239,6 @@ $color-alert: #c0392b;
     right: auto;
     bottom: 0;
 
-    height: 100%;
     width: 50%;
   }
 
