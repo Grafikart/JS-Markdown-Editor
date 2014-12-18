@@ -7,18 +7,20 @@
 ## How it works
 
 To transform a textarea in an markdown editor you just have to create a new MdEditor instance
-
-    var md = new MdEditor('#mdeditor');
-
+```javascript
+var md = new MdEditor('#mdeditor');
+```
 You can pass options ass the second parameter
 
-  var md = new MdEditor('#mdeditor', {
-    uploader: false, //'http://local.dev/Lab/MdEditor/app/upload.php?id=',
-    preview: true,
-    images: [
-      {id: '1.jpg', url: 'http://lorempicsum.com/futurama/200/200/1'},
-    ]
-  });
+```javascript
+var md = new MdEditor('#mdeditor', {
+uploader: false, //'http://local.dev/Lab/MdEditor/app/upload.php?id=',
+preview: true,
+images: [
+  {id: '1.jpg', url: 'http://lorempicsum.com/futurama/200/200/1'},
+]
+});
+```
 
 ## Options
 
