@@ -13,8 +13,7 @@
   <!-- Bootstrap core CSS -->
   <link href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.1/css/bootstrap.min.css" rel="stylesheet">
   <link href='http://fonts.googleapis.com/css?family=Open+Sans:400,600,700,800' rel='stylesheet' type='text/css'>
-  <link rel="stylesheet" href="mdeditor.css">
-  <!-- Custom styles for this template -->
+  <link href="dist/mdeditor.css" rel="stylesheet">
   <style>
     .starter-template{
       margin-top: 100px;
@@ -73,6 +72,8 @@ echo $myvar;
 
 Paragraphs are separated by a blank line.
 
+![Kill all humans !](http://lorempicsum.com/futurama/627/300/4)
+
 2nd paragraph. *Italic*, **bold**, and `monospace`. Itemized lists
 look like:
 
@@ -95,12 +96,11 @@ Unicode is supported. ☺
   </div>
 
 </div><!-- /.container -->
-<script src="//ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
-<script src="mdeditor.min.js"></script>
+<script src="dist/mdeditor.withdependency.js"></script>
 
 <script>
   var md = new MdEditor('#mdeditor', {
-    uploader: 'http://local.dev/Lab/MdEditor/app/upload.php',
+    uploader: 'upload.php',
     preview: true,
     images: [
       {id: '1.jpg', url: 'http://lorempicsum.com/futurama/200/200/1'},
