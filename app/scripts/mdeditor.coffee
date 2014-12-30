@@ -20,7 +20,7 @@ class MdEditor
 
   constructor: (selector, options) ->
     @textarea = $(selector)
-    return console.log('Aucun élément ne correspond à ce selecteuir') if @textarea.length is 0
+    return console.log('Aucun élément ne correspond à ce sélecteur') if @textarea.length is 0
 
     @options = {
       labelClose: 'Do you really want to close this window ? Every edit you did could be lost',
