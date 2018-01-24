@@ -1,6 +1,4 @@
-node_modules
+dist
 .idea
-app/images
-.sass-cache
-app/scripts/bower_components
-.tmp
+.fusebox
+node_modules

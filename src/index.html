@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Editeur Markdown</title>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+  <link rel="stylesheet" href="/app.css">
+</head>
+<body>
+
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary mb-3">
+  <a class="navbar-brand" href="#">Editeur Markdown</a>
+  <ul class="navbar-nav flex-row ml-md-auto d-none d-md-flex">
+    <li class="nav-item">
+      <a class="nav-link p-2" href="https://github.com/Grafikart/JS-Markdown-Editor/tree/typescript">
+        <svg style="display: inline-block;width: 1rem;height: 1rem;vertical-align: text-top;" class="navbar-nav-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 499.36" focusable="false"><title>GitHub</title><path d="M256 0C114.64 0 0 114.61 0 256c0 113.09 73.34 209 175.08 242.9 12.8 2.35 17.47-5.56 17.47-12.34 0-6.08-.22-22.18-.35-43.54-71.2 15.49-86.2-34.34-86.2-34.34-11.64-29.57-28.42-37.45-28.42-37.45-23.27-15.84 1.73-15.55 1.73-15.55 25.69 1.81 39.21 26.38 39.21 26.38 22.84 39.12 59.92 27.82 74.5 21.27 2.33-16.54 8.94-27.82 16.25-34.22-56.84-6.43-116.6-28.43-116.6-126.49 0-27.95 10-50.8 26.35-68.69-2.63-6.48-11.42-32.5 2.51-67.75 0 0 21.49-6.88 70.4 26.24a242.65 242.65 0 0 1 128.18 0c48.87-33.13 70.33-26.24 70.33-26.24 14 35.25 5.18 61.27 2.55 67.75 16.41 17.9 26.31 40.75 26.31 68.69 0 98.35-59.85 120-116.88 126.32 9.19 7.9 17.38 23.53 17.38 47.41 0 34.22-.31 61.83-.31 70.23 0 6.85 4.61 14.81 17.6 12.31C438.72 464.97 512 369.08 512 256.02 512 114.62 397.37 0 256 0z" fill="currentColor" fill-rule="evenodd"></path></svg>
+      </a>
+    </li>
+  </ul>
+</nav>
+
+<div class="container">
+
+  <div class="alert alert-info">La reconnaissance vocale n'est activée que sur chrome. Utilisez ce navigateur pour tester.</div>
+
+  <div id="editor">Je vous propose aujourd&#39;hui de découvrir ensemble la Stack Elastic. Le principe de cette série d&#39;outils est de créer de manière automatique des dashboards à partir de données provenant des logs de vos serveurs. Cette stack, anciennement appelé ELK, est composée de 3 outils principaux :
+
+| Je teste | Les tableaux |  |
+|-----|-----|-----|
+| Oui | Non | Oui |
+| Oui | Non | Oui |
+| Oui | Non | Oui |
+
+- ElasticSearch et un moteur de recherche et d&#39;analyse restful distribuer
+- Logstash est un &quot;pipeline&quot; kylie et qui traite en simultané des données provenant de multiples sources et qui les transforme ensuite vers n&#39;importe quel système de stockage.
+- Kibana permet de consulter des données provenant des ElasticSearch et de les explorer grâce à un dashboard entièrement personnalisable.
+
+Récemment, un nouvel outil a été rajouté à la Stack Elastic : [Beats](https://www.elastic.co/fr/products/beats). Nous ne traiterons pas ici de cet outil car il n&#39;a d&#39;intérêt que si vous utilisez plusieurs machines (c&#39;est un agents léger qui permet aux machines de transmettre les données provenant de vos logs vers Logstash ou Elasticsearch)
+
+Nous allons donc voir ensemble comment installer et configurer ces 3 outils. Notre objectif est de traiter les logs provenant de nginx pour créer un dashboard simplifiant l&#39;accès aux données qui nous intérèssent.
+
+Pour la suite de cet article j&#39;utiliserais Ubuntu Xenial (16.04). Si vous souhaitez utiliser la même configuration que moi, voici ma configuration vagrant :
+
+```ruby
+Vagrant.configure(&quot;2&quot;) do |config|
+  config.vm.box = &quot;ubuntu/xenial64&quot;
+  config.vm.network &quot;private_network&quot;, ip: &quot;192.168.50.50&quot;
+  config.vm.provider &quot;virtualbox&quot; do |v|
+    v.memory = 4096
+    v.cpus = 2
+  end
+end
+```
+
+## Avant de commencer
+
+Avant de commencer il faut commencer par installer la version 8 ou supérieur de Java. Vous pouvez utiliser la distribution officielle d&#39;Oracle ou utiliser la version open source OpenJDK
+
+```bash
+sudo apt-get update
+sudo apt-get install openjdk-8-jdk
+```
+
+## Elasticsearch
+
+Nous allons commencer par l&#39;installation d&#39;ElasticSearch. Il existe différentes méthodes pour l&#39;installer mais nous allons utiliser la méthode la plus simple, celle basée sur l&#39;utilisation des [Dépôts](https://www.elastic.co/guide/en/elasticsearch/reference/current/deb.html). On commence par importer la clé PGP d&#39;ElasticSearch.
+
+```
+wget -qO - https://artifacts.elastic.co/GPG-KEY-elasticsearch | sudo apt-key add -
+```
+
+On installe ensuite le paquet `apt-transport-https` afin de pouvoir utiliser les lignes `deb https://domain distro main` dans la liste des dépôts.
+
+```bash
+sudo apt-get install apt-transport-https
+```
+
+Et ensuite il ne nous resque plus qu&#39;à lancer l&#39;installation.
+
+```bash
+sudo apt-get update
+sudo apt-get install elasticsearch
+```
+
+Contrairement à d&#39;autres applications, ElasticSearch n&#39;est pas démarrée automatiquement à la fin de l&#39;installation et n&#39;est pas non plus rajoutée dans la liste des applications lancées au démarrage.
+Pour indiquer à notre système de démarrer ElasticSearch au boot (Attention, j&#39;utilise ici Ubuntu 16.04 qui utilise `systemd`  au lieu de `init` donc vous devrez peut être adapter cette commande à votre système)
+
+```bash
+sudo systemctl daemon-reload
+sudo systemctl enable elasticsearch.service
+```
+
+Avant de démarrer ElasticSearch, nous allons nous assurer que le serveur n&#39;écoute que sur localhost afin d&#39;éviter que n&#39;importe qui puisse accéder à nos données depuis l&#39;extérieur. Pour cela, nous allons éditer le fichier `/etc/elasticsearch/elasticsearch.yml`  (dans tous les cas vous devriez avoir un [pare feu](https://www.grafikart.fr/formations/serveur-linux/ufw) pour éviter ce genre de problèmes).
+
+```
+network.host: localhost
+```
+
+Autre petit détail, si vous êtes sur un système plutôt modeste, vous pouvez changer la quantité de RAM qui est alloué par Java en modifiant le fichier `/etc/elasticsearch/jvm.options`
+
+```bash
+# Xms represents the initial size of total heap space
+# Xmx represents the maximum size of total heap space
+-Xms512m
+-Xmx512m
+```
+
+Une fois ces modifications effectuées, nous pouvons enfin démarrer elasticSearch.
+
+```bash
+sudo systemctl start elasticsearch.service
+```
+
+Pour s&#39;assurer que l&#39;installation s&#39;est correctement effectuée et que le service fonctionne correctement on peut appeller l&#39;URL `http://localhost:9200`
+
+```bash
+curl &quot;localhost:9200&quot;
+{
+  &quot;name&quot; : &quot;ddI1Qyn&quot;,
+  &quot;cluster_name&quot; : &quot;elasticsearch&quot;,
+  &quot;cluster_uuid&quot; : &quot;t_0C9EZAR6alCe5k1rxfvg&quot;,
+  &quot;version&quot; : {
+    &quot;number&quot; : &quot;6.1.2&quot;,
+    &quot;build_hash&quot; : &quot;5b1fea5&quot;,
+    &quot;build_date&quot; : &quot;2018-01-10T02:35:59.208Z&quot;,
+    &quot;build_snapshot&quot; : false,
+    &quot;lucene_version&quot; : &quot;7.1.0&quot;,
+    &quot;minimum_wire_compatibility_version&quot; : &quot;5.6.0&quot;,
+    &quot;minimum_index_compatibility_version&quot; : &quot;5.0.0&quot;
+  },
+  &quot;tagline&quot; : &quot;You Know, for Search&quot;
+}
+```
+
+Si jamais le service ne démarre pas correctement, vous pouvez vérifier les journaux
+
+```
+sudo journalctl -n 50 -f -u elasticsearch
+```
+
+Et le reste des erreurs peuvent être obtenues en lisant les logs à l&#39;emplacement habituel `/var/log/elasticsearch`
+
+## Logstash
+
+Maintenant que nous avons installé elasticSearch, il va falloir remplir notre base de données avec les informations provenant de nos logs. Nous allons donc commencer par installer logstash.
+
+```bash
+sudo apt-get install logstash
+```
+
+Puis nous allons enregistrer le service au démarrage
+
+```
+sudo systemctl daemon-reload
+sudo systemctl enable logstash.service
+```
+
+Ensuite, il va falloir créer un fichier de configuration pour expliquer à Logstash comment traiter nos données. La configuration fonctionne en 3 partie :
+
+- La partie **input**, permet d&#39;indiquer comment les données vont entrer dans le pipeline
+- La partie **filter** va permettre d&#39;indiquer comment parser et extraire les données
+- La partie **output** permet d&#39;indiquer où vont être envoyées les données
+
+Dans notre cas, on souhaite utiliser les log provenant de nginx donc nous allons utiliser l&#39;input [File](https://www.elastic.co/guide/en/logstash/6.x/plugins-inputs-file.html).
+Pour la partie filtre, les logs de nginx ont l&#39;avantage d&#39;avoir un format conventionnel et nous allons donc pouvoir utiliser un pattern [grok](https://www.elastic.co/guide/en/logstash/6.x/plugins-filters-grok.html) pour extraire les informations (si vous voulez en apprendre plus sur l&#39;ensemble des filtres qui sont disponibles au niveau de Logstash, n&#39;hésitez pas à faire un tour sur [la documentation](https://www.elastic.co/guide/en/logstash/6.x/filter-plugins.html)). Enfin, pour la sortie nous allons envoyer nos données vers ElasticSearch.
+
+```ruby
+# /etc/logstash/conf.d/01-local-dev.conf
+input {
+	file { path =&gt; &quot;/home/vagrant/access_log&quot; }
+}
+filter {
+      grok {
+        match =&gt; { &quot;message&quot; =&gt; [&quot;%{IPORHOST:[nginx][access][remote_ip]} - %{DATA:[nginx][access][user_name]} \[%{HTTPDATE:[nginx][access][time]}\] \&quot;%{WORD:[nginx][access][method]} %{DATA:[nginx][access][url]} HTTP/%{NUMBER:[nginx][access][http_version]}\&quot; %{NUMBER:[nginx][access][response_code]} %{NUMBER:[nginx][access][body_sent][bytes]} \&quot;%{DATA:[nginx][access][referrer]}\&quot; \&quot;%{DATA:[nginx][access][agent]}\&quot; %{NUMBER:[nginx][access][response_time]:float}&quot;] }
+        remove_field =&gt; &quot;message&quot;
+      }
+      mutate {
+        add_field =&gt; { &quot;read_timestamp&quot; =&gt; &quot;%{@timestamp}&quot; }
+      }
+      date {
+        match =&gt; [ &quot;[nginx][access][time]&quot;, &quot;dd/MMM/YYYY:H:m:s Z&quot; ]
+        remove_field =&gt; &quot;[nginx][access][time]&quot;
+      }
+      useragent {
+        source =&gt; &quot;[nginx][access][agent]&quot;
+        target =&gt; &quot;[nginx][access][user_agent]&quot;
+        remove_field =&gt; &quot;[nginx][access][agent]&quot;
+      }
+      geoip {
+        source =&gt; &quot;[nginx][access][remote_ip]&quot;
+      }
+}
+output {
+	elasticsearch {
+         hosts =&gt; &quot;localhost:9200&quot;
+	     index =&gt; &quot;logstash-local-dev-%{+YYYY.MM.dd}&quot;
+	}
+}
+```
+
+Une fois que vous êtes satisfait de votre configuration, vous pouvez démarrer le service Logstash
+
+```
+sudo systemctl start logstash.service
+```
+
+Si vous souhaitez déboguer votre configuration, il est possible d&#39;utiliser le module de sortie `stdout {}` de tester la configuration avec la commande :
+
+```bash
+sudo /usr/share/logstash/bin/logstash --debug --path.settings /etc/logstash -f /etc/logstash/conf.d/01-local-dev.conf
+```
+
+A partir de maintenant notre base de données ElasticSearch devrait se remplir en même temps que nos logs d&#39;accès nginx. Pour vérifier que l&#39;index est correctement créé, vous pouvez appeler l&#39;API REST fournie par elasticSearch :
+
+```
+curl &quot;localhost:9200/_cat/indices?v&quot;
+```
+
+## Kibana
+
+Enfin nous allons pouvoir terminer avec la mise en place du dashboard Kibana. Comme d&#39;habitude nous allons passer par les dépôts pour l&#39;installer.
+
+```
+sudo apt-get install kibana
+```
+
+Nous allons ensuite éditer la configuration `/etc/kibana/kibana.yml` afin de ne pas écouter les connexions venant de l&#39;extérieur.
+
+```
+network.host: localhost
+```
+
+Et une fois cette modification effectuée nous allons démarrer le service et l&#39;enregistrer au démarrage.
+
+```bash
+sudo systemctl daemon-reload
+sudo systemctl enable kibana.service
+sudo systemctl start kibana.service
+```
+
+Si vous voulez vérifier que kibana et correctement démarré, il vous suffit d&#39;appeler l&#39;URL racine de l&#39;application
+
+```bash
+curl &quot;localhost:5601&quot;
+&lt;script&gt;var hashRoute = &#39;/app/kibana&#39;;
+var defaultRoute = &#39;/app/kibana&#39;;
+
+var hash = window.location.hash;
+if (hash.length) {
+  window.location = hashRoute + hash;
+} else {
+  window.location = defaultRoute;
+}&lt;/script&gt;
+```
+
+Avec notre configuration actuelle, il n&#39;est pas possible d&#39;accéder à kibana depuis l&#39;extérieur. Nous allons donc utiliser nginx et créer un proxy pour accéder à notre dashboard et en profiter pour ajouter le système d&#39;authentification basique. Pour générer le fichier qui contiendra les informations d&#39;authentification nous allons utiliser le paquet `apache2-utils`
+
+```bash
+sudo apt-get install apache2-utils
+sudo htpasswd -c /etc/nginx/htpasswd.users tuto
+```
+
+Une fois ce fichier créé, nous pouvons configurer notre hôte virtuel sur nginx.
+
+```bash
+server {
+	listen 80;
+	server_name stats.local.development;
+
+	auth_basic &quot;Acces interdit&quot;;
+	auth_basic_user_file /etc/nginx/htpasswd.users;
+
+	location / {
+		proxy_pass http://localhost:5601;
+		proxy_http_version 1.1;
+		proxy_set_header Upgrade $http_upgrade;
+		proxy_set_header Connection &#39;upgrade&#39;;
+		proxy_set_header Host $host;
+		proxy_cache_bypass $http_upgrade;
+	}
+}
+```
+
+Après avoir recharger nginx, vous devriez être en mesure d&#39;accéder à votre dashboard Kibana avec l&#39;URL que vous avez définie. A partir de là, il ne vous reste plus qu&#39;à construire le dashboard en fonction de vos besoins et des informations que vous jugez pertinentes :
+
+- On commence par définir un motif permettant de sélectionner les index à utiliser pour remplir les graphiques
+- Ensuite, on crée les visualisations (graphiques, tableaux, cartes...) en sélectionnant le type de représentation puis les données à utiliser.
+- Enfin, on crée un dashboard en sélectionnant les visualisations à utiliser et comment elles seront placées.
+
+## Et maintenant ?
+
+Maintenant vous savez utiliser la Stack Elastic et vous pouvez et à d&#39;autres cas d&#39;utilisation. À vous de voir le type de données qui vous intéresse et ce que vous voulez en faire.
+
+Une autre piste à explorer est l&#39;utilisation du plugin [X-pack](https://www.elastic.co/fr/products/x-pack) qui permet de rajouter toute une série de fonctionnalités au système que l&#39;on a déjà mis en place comme par exemple la création d&#39;un système d&#39;alerte, l&#39;amélioration de la sécurité avec plusieurs niveaux de permission, la création de rapports personnalisés, etc...
+
+Maintenant vous savez utiliser la Stack Elastic et vous pouvez et à d&#39;autres cas d&#39;utilisation. À vous de voir le type de données qui vous intéresse et ce que vous voulez en faire.
+
+Une autre piste à explorer est l&#39;utilisation du plugin [X-pack](https://www.elastic.co/fr/products/x-pack) qui permet de rajouter toute une série de fonctionnalités au système que l&#39;on a déjà mis en place comme par exemple la création d&#39;un système d&#39;alerte, l&#39;amélioration de la sécurité avec plusieurs niveaux de permission, la création de rapports personnalisés, etc...
+
+Maintenant vous savez utiliser la Stack Elastic et vous pouvez et à d&#39;autres cas d&#39;utilisation. À vous de voir le type de données qui vous intéresse et ce que vous voulez en faire.
+
+Une autre piste à explorer est l&#39;utilisation du plugin [X-pack](https://www.elastic.co/fr/products/x-pack) qui permet de rajouter toute une série de fonctionnalités au système que l&#39;on a déjà mis en place comme par exemple la création d&#39;un système d&#39;alerte, l&#39;amélioration de la sécurité avec plusieurs niveaux de permission, la création de rapports personnalisés, etc...
+
+Maintenant vous savez utiliser la Stack Elastic et vous pouvez et à d&#39;autres cas d&#39;utilisation. À vous de voir le type de données qui vous intéresse et ce que vous voulez en faire.
+
+Une autre piste à explorer est l&#39;utilisation du plugin [X-pack](https://www.elastic.co/fr/products/x-pack) qui permet de rajouter toute une série de fonctionnalités au système que l&#39;on a déjà mis en place comme par exemple la création d&#39;un système d&#39;alerte, l&#39;amélioration de la sécurité avec plusieurs niveaux de permission, la création de rapports personnalisés, etc...</div>
+  </div>
+</body>
+</html>

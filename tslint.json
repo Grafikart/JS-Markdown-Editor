@@ -1,0 +1,7 @@
+{
+  "extends": "tslint-config-standard",
+  "rules": {
+    "quotemark": [true, "single", "jsx-double"],
+    "object-curly-spacing": ["error", "never"]
+  }
+}

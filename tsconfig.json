@@ -1,0 +1,22 @@
+{
+  "compilerOptions": {
+    "module": "commonjs",
+    "target": "ES5",
+    "allowJs": true,
+    "jsx": "react",
+    "sourceMap": true,
+    "jsxFactory": "h",
+    "importHelpers": true,
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "allowSyntheticDefaultImports": true,
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    "lib": [
+      "DOM",
+      "ES6",
+      "DOM.Iterable",
+      "ScriptHost"
+    ]
+  }
+}
