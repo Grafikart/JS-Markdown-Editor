@@ -29,7 +29,7 @@ export class SectionsGenerator {
     if (element === target) {
       return acc
     }
-    return this.offsetTop(element.parentElement as HTMLElement, target, acc + element.offsetTop)
+    return this.offsetTop(element.offsetParent as HTMLElement, target, acc + element.offsetTop)
   }
 
   static getIndex (offsetTop: number, sections: ISections): number {
