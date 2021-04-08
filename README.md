@@ -10,7 +10,7 @@ To transform a textarea in an markdown editor you just have to create a new MdEd
 ```javascript
 var md = new MdEditor('#mdeditor');
 ```
-You can pass options ass the second parameter
+You can pass options as the second parameter
 
 ```javascript
 var md = new MdEditor('#mdeditor', {
